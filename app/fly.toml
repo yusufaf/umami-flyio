@@ -1,0 +1,56 @@
+# Umami (public app).
+#
+# The official ghcr.io/umami-software/umami:postgresql-latest image, built for
+# a Postgres backend (v3 dropped MySQL support entirely). Listens on :3000.
+#
+# TRACKER_SCRIPT_NAME / COLLECT_API_ENDPOINT rename the tracker script and
+# collection endpoint off their well-known defaults. Ad-block filter lists
+# (EasyPrivacy) block `/umami.js` and the generic `*/script.js` path by name,
+# not just by host — self-hosting alone does not dodge that, only renaming
+# does. Combined with serving this app from a subdomain of the site it tracks
+# (so it's first-party, not third-party), the tracker loads and posts events
+# even with an ad blocker on. See README.
+#
+# See https://fly.io/docs/reference/configuration/
+
+app = 'umami-af'   # EXAMPLE — globally-unique on Fly; pick your own (see README). If renamed, also update DATABASE_URL below + the db app name in db/fly.toml
+primary_region = 'lax'
+
+[build]
+  image = 'ghcr.io/umami-software/umami:postgresql-latest'
+
+[env]
+  TRACKER_SCRIPT_NAME = 's.js'
+  COLLECT_API_ENDPOINT = '/api/e'
+
+  DISABLE_TELEMETRY = '1'
+
+  # Secrets set via `fly secrets` (NOT here):
+  #   DATABASE_URL               postgresql://umami:<password>@umami-db-af.internal:5432/umami
+  #   APP_SECRET                 openssl rand -hex 32
+  #   TWO_FACTOR_ENCRYPTION_KEY  openssl rand -hex 32 (optional — only required if you
+  #                               enable 2FA on the admin account; recommended, since this
+  #                               instance is reachable at a public URL)
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'suspend'
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = 'requests'
+    hard_limit = 50
+    soft_limit = 25
+
+  [[http_service.http_checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '30s'
+    method = 'GET'
+    path = '/api/heartbeat'
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '512mb'   # Umami fails to boot under 512mb

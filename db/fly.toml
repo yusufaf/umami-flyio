@@ -1,0 +1,27 @@
+# Umami — PostgreSQL (private, always-on).
+# Mirrors the `db` service in Umami's docker-compose.yml. No [[services]] or
+# [http_service] block => not exposed to the internet; reachable from the app
+# over Fly's private network at `umami-db-af.internal:5432`.
+#
+# See https://fly.io/docs/reference/configuration/
+
+app = 'umami-db-af'   # EXAMPLE — globally-unique on Fly; pick your own (see README "Choose your own app names")
+primary_region = 'lax'
+
+[build]
+  image = 'postgres:18.3-alpine'
+
+[env]
+  # Keep the data dir in a subfolder of the mounted volume (recommended for the
+  # official postgres image so initdb doesn't trip over the mount root).
+  PGDATA = '/var/lib/postgresql/data'
+  # POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD are set via `fly secrets`
+  # (see README) so the password never lands in git.
+
+[[mounts]]
+  source = 'umami_pgdata'
+  destination = '/var/lib/postgresql'
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '256mb'   # bump to 512mb if you see OOM under load
