@@ -25,6 +25,10 @@ primary_region = 'lax'
 
   DISABLE_TELEMETRY = '1'
 
+  # Fly's proxy sets Fly-Client-IP to the real client address. Without this, Umami falls back
+  # to X-Forwarded-For, whose first entry the client can set, so the location lookup can be fooled.
+  CLIENT_IP_HEADER = 'fly-client-ip'
+
   # Secrets set via `fly secrets` (NOT here):
   #   DATABASE_URL               postgresql://umami:<password>@umami-db-af.internal:5432/umami
   #   APP_SECRET                 openssl rand -hex 32
