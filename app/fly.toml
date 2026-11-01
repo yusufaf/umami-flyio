@@ -25,6 +25,12 @@ primary_region = 'lax'
 
   DISABLE_TELEMETRY = '1'
 
+  # Fly's proxy sets Fly-Client-IP to the real client address. Umami reads CLIENT_IP_HEADER before
+  # its fallback list (src/lib/ip.ts), which trusts client-settable headers such as True-Client-IP,
+  # X-Real-IP and X-Forwarded-For, so without this the location lookup can be fooled. This assumes
+  # Fly's proxy is the edge: behind Cloudflare or another proxy, Fly-Client-IP is that proxy's IP.
+  CLIENT_IP_HEADER = 'fly-client-ip'
+
   # Secrets set via `fly secrets` (NOT here):
   #   DATABASE_URL               postgresql://umami:<password>@umami-db-af.internal:5432/umami
   #   APP_SECRET                 openssl rand -hex 32
